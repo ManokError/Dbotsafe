@@ -191,15 +191,23 @@ module.exports = {
         return interaction.reply({ content: 'This dashboard is only available in a server.', ephemeral: true });
       }
 
-      const [settingsDoc, warnings, tickets, securityLogs, welcomeDoc, autoRoleDoc, verificationDoc] = await Promise.all([
-        GuildSettings.findOne({ guildId: guild.id }),
-        Warning.countDocuments({ guildId: guild.id }),
-        Ticket.find({ guildId: guild.id }),
-        SecurityLog.countDocuments({ guildId: guild.id }),
-        Welcome.findOne({ guildId: guild.id }),
-        AutoRole.findOne({ guildId: guild.id }),
-        Verification.findOne({ guildId: guild.id })
-      ]);
+      await interaction.deferReply();
+
+      let settingsDoc, warnings, tickets, securityLogs, welcomeDoc, autoRoleDoc, verificationDoc;
+      try {
+        ([settingsDoc, warnings, tickets, securityLogs, welcomeDoc, autoRoleDoc, verificationDoc] = await Promise.all([
+          GuildSettings.findOne({ guildId: guild.id }),
+          Warning.countDocuments({ guildId: guild.id }),
+          Ticket.find({ guildId: guild.id }),
+          SecurityLog.countDocuments({ guildId: guild.id }),
+          Welcome.findOne({ guildId: guild.id }),
+          AutoRole.findOne({ guildId: guild.id }),
+          Verification.findOne({ guildId: guild.id })
+        ]));
+      } catch (dbError) {
+        console.error('Help dashboard database error:', dbError);
+        return interaction.editReply({ content: 'The premium dashboard could not be loaded due to a database error. Please try again later.' });
+      }
 
       const settings = {
         security: settingsDoc?.security || {},
@@ -226,11 +234,11 @@ module.exports = {
         return rows;
       };
 
-      const message = await interaction.reply({
+      const message = await interaction.editReply({
         embeds: [buildPage({ interaction, pageIndex, stats, settings, verification: verificationDoc, welcome: welcomeDoc, autoRole: autoRoleDoc, client: interaction.client })],
-        components: createComponents(pageIndex),
-        fetchReply: true
+        components: createComponents(pageIndex)
       });
+
 
       const collector = message.createMessageComponentCollector({
         filter: (componentInteraction) => componentInteraction.user.id === interaction.user.id,
@@ -317,9 +325,12 @@ module.exports = {
       });
     } catch (error) {
       console.error('Help dashboard error:', error);
-      if (!interaction.replied) {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.editReply({ content: 'The premium dashboard could not be loaded.' });
+      } else {
         await interaction.reply({ content: 'The premium dashboard could not be loaded.', ephemeral: true });
       }
     }
   }
 };
+
