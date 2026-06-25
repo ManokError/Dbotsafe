@@ -1,0 +1,19 @@
+{
+  "name": "elijahsec-discord-bot",
+  "version": "1.0.0",
+  "description": "Production-grade Discord security bot named ELIJAHSEC",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "node src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.1",
+    "mongoose": "^8.5.0"
+  }
+}
