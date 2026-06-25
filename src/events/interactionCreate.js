@@ -76,7 +76,7 @@ module.exports = {
     if (!command) return;
 
     try {
-      await command.execute(interaction);
+      await command.execute(interaction, client);
     } catch (error) {
       console.error(error);
       await interaction.reply({ content: 'An error occurred while running this command.', ephemeral: true });
